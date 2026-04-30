@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Video Readiness Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Video Readiness Dashboard</h1>
+    <div id="tmux-status" class="pill">tmux: …</div>
+  </header>
+
+  <main>
+    <section id="browser">
+      <div class="col" id="col-customers">
+        <h2>Customers</h2>
+        <ul class="list" data-list="customers"></ul>
+      </div>
+      <div class="col" id="col-locations">
+        <h2>Locations</h2>
+        <ul class="list" data-list="locations"></ul>
+      </div>
+      <div class="col" id="col-conveyors">
+        <h2>Conveyors</h2>
+        <ul class="list" data-list="conveyors"></ul>
+      </div>
+      <div class="col" id="col-dates">
+        <h2>Recording dates</h2>
+        <div class="legend">
+          <span class="dot ready"></span>ready
+          <span class="dot done"></span>already extracted
+          <span class="dot novids"></span>no videos
+        </div>
+        <ul class="list dates" data-list="dates"></ul>
+        <button id="queue-btn" disabled>Queue selected</button>
+      </div>
+    </section>
+
+    <section id="queue">
+      <h2>Queue</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Status</th><th>Customer</th><th>Location</th>
+            <th>Conveyor</th><th>Date</th><th>Created</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="queue-body"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
