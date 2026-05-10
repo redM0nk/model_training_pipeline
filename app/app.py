@@ -10,6 +10,7 @@ from flask import Flask, Response, jsonify, render_template, request
 from dispatcher import Dispatcher
 from queue_store import QueueStore
 from s3_browser import S3Browser
+from system_stats import CPUSampler, collect as collect_system_stats
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -45,6 +46,10 @@ def create_app() -> Flask:
     store = QueueStore(os.path.join(HERE, "state", "queue.json"))
     dispatcher = Dispatcher(store, conf)
     dispatcher.start()
+
+    cpu_sampler = CPUSampler()
+    cpu_sampler.sample()  # prime baseline so the first request returns a value
+    disk_path = conf.get("system_stats_disk_path", "/")
 
     @app.get("/")
     def index():
@@ -164,6 +169,10 @@ def create_app() -> Flask:
         if not j:
             return jsonify({"error": "not pending or not found"}), 404
         return jsonify(j)
+
+    @app.get("/api/system_stats")
+    def api_system_stats():
+        return jsonify(collect_system_stats(cpu_sampler, disk_path))
 
     @app.get("/api/tmux/status")
     def api_tmux_status():

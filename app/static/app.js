@@ -215,6 +215,42 @@ async function refreshQueue() {
   }
 }
 
+function fmtPct(p) {
+  return (p == null) ? '—' : `${p.toFixed(0)}%`;
+}
+
+function fmtGB(bytes) {
+  return `${(bytes / (1024 ** 3)).toFixed(1)} GB`;
+}
+
+function pctClass(p) {
+  if (p == null) return '';
+  if (p >= 90) return 'crit';
+  if (p >= 75) return 'warn';
+  return '';
+}
+
+async function refreshSystemStats() {
+  try {
+    const s = await fetchJSON('/api/system_stats');
+    const cpu = $('#sys-cpu');
+    cpu.textContent = `cpu ${fmtPct(s.cpu_percent)}`;
+    cpu.className = 'pill ' + pctClass(s.cpu_percent);
+
+    const mem = $('#sys-mem');
+    mem.textContent = `mem ${fmtPct(s.memory.percent)} (${fmtGB(s.memory.used)} / ${fmtGB(s.memory.total)})`;
+    mem.className = 'pill ' + pctClass(s.memory.percent);
+
+    const disk = $('#sys-disk');
+    disk.textContent = `disk ${fmtPct(s.disk.percent)} (${fmtGB(s.disk.used)} / ${fmtGB(s.disk.total)})`;
+    disk.className = 'pill ' + pctClass(s.disk.percent);
+  } catch (e) {
+    $('#sys-cpu').textContent = 'cpu: error';
+    $('#sys-mem').textContent = 'mem: error';
+    $('#sys-disk').textContent = 'disk: error';
+  }
+}
+
 async function refreshTmux() {
   try {
     const s = await fetchJSON('/api/tmux/status');
@@ -343,5 +379,7 @@ document.addEventListener('keydown', (e) => {
 loadCustomers();
 refreshQueue();
 refreshTmux();
+refreshSystemStats();
 setInterval(refreshQueue, 5000);
 setInterval(refreshTmux, 5000);
+setInterval(refreshSystemStats, 5000);
