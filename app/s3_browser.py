@@ -4,8 +4,6 @@ Layout assumed:
   s3://<bucket>/<root>/<customer>/<location>/<conveyor>/1/Videos/<date>/...
   s3://<bucket>/<root>/<customer>/<location>/<conveyor>/1/Images/Original/RGB/<date>/...
 """
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import List
 
