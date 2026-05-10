@@ -1,0 +1,37 @@
+# Web app configuration
+
+# S3 layout being browsed
+s3_bucket: emain
+s3_root_prefix: Data/Modeling/Fact/Production/
+videos_subpath: 1/Videos/
+images_subpath: 1/Images/Original/RGB/
+
+# Where the extraction job writes images (used to detect "already processed")
+# Compared to videos_subpath dates to determine readiness.
+
+# tmux target where queued commands are dispatched.
+# Format: <session>:<window>.<pane>
+tmux_target: "1:0.0"
+
+# Command template. {recording_date} and {config_path} are substituted.
+# {config_path} is a per-job temp YAML the dispatcher writes that contains
+# locations_to_monitor scoped to the queued conveyor only.
+job_command_template: >-
+  python data_collection/extract_frames_for_labeling_v2.py
+  --path_to_config {config_path}
+  --recording_date {recording_date}
+
+# Working directory in which the tmux command is run (cd before send-keys).
+job_working_dir: "/home/ubuntu/main/python"
+
+# Base config that the dispatcher copies + edits per job.
+base_extract_config: "configs/cloud/extract_frames_for_labeling.yaml"
+
+# Where per-job rewritten configs are stored (relative to job_working_dir or absolute).
+per_job_config_dir: "/home/ubuntu/extract_images_tmp/queued_configs"
+
+# How often the dispatcher polls (seconds)
+dispatch_poll_interval: 5
+
+# tmux pane "idle" detection — pane_current_command values that indicate idle.
+idle_commands: ["bash", "zsh", "sh", "fish", "-bash", "-zsh"]
