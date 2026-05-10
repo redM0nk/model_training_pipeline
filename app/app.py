@@ -56,7 +56,11 @@ def create_app() -> Flask:
         )
         return jsonify([
             {"date": e.date, "has_videos": e.has_videos,
-             "has_images": e.has_images, "ready": e.ready}
+             "has_images": e.has_images, "ready": e.ready,
+             "video_file_count": e.video_file_count,
+             "video_total_size": e.video_total_size,
+             "image_file_count": e.image_file_count,
+             "image_total_size": e.image_total_size}
             for e in entries
         ])
 

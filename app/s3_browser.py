@@ -4,8 +4,9 @@ Layout assumed:
   s3://<bucket>/<root>/<customer>/<location>/<conveyor>/1/Videos/<date>/...
   s3://<bucket>/<root>/<customer>/<location>/<conveyor>/1/Images/Original/RGB/<date>/...
 """
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 
 import boto3
 from botocore.config import Config
@@ -16,6 +17,10 @@ class DateEntry:
     date: str
     has_videos: bool
     has_images: bool
+    video_file_count: int = 0
+    video_total_size: int = 0
+    image_file_count: int = 0
+    image_total_size: int = 0
 
     @property
     def ready(self) -> bool:
@@ -32,7 +37,7 @@ class S3Browser:
         self.client = boto3.client("s3", config=Config(retries={"max_attempts": 3}))
 
     def _list_prefixes(self, prefix: str) -> List[str]:
-        out: List[str] = []
+        out = []  # type: List[str]
         paginator = self.client.get_paginator("list_objects_v2")
         for page in paginator.paginate(Bucket=self.bucket, Prefix=prefix, Delimiter="/"):
             for cp in page.get("CommonPrefixes") or []:
@@ -42,26 +47,60 @@ class S3Browser:
                     out.append(name)
         return sorted(out)
 
+    def _prefix_stats(self, prefix: str) -> Tuple[int, int]:
+        """Return (file_count, total_bytes) for everything under `prefix`."""
+        count = 0
+        size = 0
+        paginator = self.client.get_paginator("list_objects_v2")
+        for page in paginator.paginate(Bucket=self.bucket, Prefix=prefix):
+            for obj in page.get("Contents") or []:
+                if obj["Key"].endswith("/"):
+                    continue
+                count += 1
+                size += int(obj.get("Size", 0))
+        return count, size
+
     def list_customers(self) -> List[str]:
         return self._list_prefixes(self.root_prefix)
 
     def list_locations(self, customer: str) -> List[str]:
-        return self._list_prefixes(f"{self.root_prefix}{customer}/")
+        return self._list_prefixes("{}{}/".format(self.root_prefix, customer))
 
     def list_conveyors(self, customer: str, location: str) -> List[str]:
-        return self._list_prefixes(f"{self.root_prefix}{customer}/{location}/")
+        return self._list_prefixes(
+            "{}{}/{}/".format(self.root_prefix, customer, location))
 
     def list_dates(self, customer: str, location: str, conveyor: str) -> List[DateEntry]:
         base = f"{self.root_prefix}{customer}/{location}/{conveyor}/"
-        video_dates = set(self._list_prefixes(f"{base}{self.videos_subpath}"))
-        image_dates = set(self._list_prefixes(f"{base}{self.images_subpath}"))
+        videos_root = f"{base}{self.videos_subpath}"
+        images_root = f"{base}{self.images_subpath}"
+        video_dates = set(self._list_prefixes(videos_root))
+        image_dates = set(self._list_prefixes(images_root))
         all_dates = sorted(video_dates | image_dates, reverse=True)
-        return [
-            DateEntry(date=d,
-                      has_videos=d in video_dates,
-                      has_images=d in image_dates)
-            for d in all_dates
-        ]
+
+        def stats_for(date: str) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+            v = self._prefix_stats(f"{videos_root}{date}/") if date in video_dates else (0, 0)
+            i = self._prefix_stats(f"{images_root}{date}/") if date in image_dates else (0, 0)
+            return v, i
+
+        entries: List[DateEntry] = []
+        if not all_dates:
+            return entries
+
+        with ThreadPoolExecutor(max_workers=min(16, len(all_dates) * 2)) as ex:
+            results = list(ex.map(stats_for, all_dates))
+
+        for d, ((v_count, v_size), (i_count, i_size)) in zip(all_dates, results):
+            entries.append(DateEntry(
+                date=d,
+                has_videos=d in video_dates,
+                has_images=d in image_dates,
+                video_file_count=v_count,
+                video_total_size=v_size,
+                image_file_count=i_count,
+                image_total_size=i_size,
+            ))
+        return entries
 
     def relative_location_path(self, customer: str, location: str, conveyor: str) -> str:
         """Return the path used in extract_frames_for_labeling.yaml's locations_to_monitor."""

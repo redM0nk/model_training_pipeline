@@ -38,9 +38,32 @@ main { padding: 16px 20px; }
 .list li.selected { background: #2a3450; color: #fff; }
 .list li.disabled { opacity: 0.5; cursor: not-allowed; }
 
-.list.dates li { justify-content: space-between; }
+.list.dates li {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  padding: 8px;
+}
 .list.dates input[type="checkbox"] { accent-color: #6ddc8a; }
 .list.dates .meta { font-size: 11px; color: #8b95a7; }
+.list.dates .date-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.list.dates .date-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  cursor: pointer;
+}
+.list.dates .date-stats {
+  font-size: 11px;
+  color: #6c7689;
+  padding-left: 30px;
+  white-space: pre;
+}
 
 .dot {
   display: inline-block; width: 10px; height: 10px; border-radius: 50%;

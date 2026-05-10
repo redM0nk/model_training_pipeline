@@ -83,6 +83,15 @@ async function selectConveyor(name) {
   renderDates();
 }
 
+function formatSize(bytes) {
+  if (!bytes) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let i = 0;
+  let v = bytes;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return `${v >= 10 || i === 0 ? v.toFixed(0) : v.toFixed(1)} ${units[i]}`;
+}
+
 function renderDates() {
   clear(lists.dates);
   if (!state.dates.length) {
@@ -97,9 +106,11 @@ function renderDates() {
     if (d.has_videos && d.has_images) { dotCls = 'done'; label = 'extracted'; }
     else if (d.ready) { dotCls = 'ready'; label = 'ready'; }
 
+    const top = document.createElement('div');
+    top.className = 'date-top';
+
     const left = document.createElement('label');
-    left.style.display = 'flex'; left.style.alignItems = 'center'; left.style.gap = '8px';
-    left.style.flex = '1'; left.style.cursor = 'pointer';
+    left.className = 'date-left';
 
     const cb = document.createElement('input');
     cb.type = 'checkbox';
@@ -118,12 +129,25 @@ function renderDates() {
     left.appendChild(cb);
     left.appendChild(dot);
     left.appendChild(document.createTextNode(d.date));
-    li.appendChild(left);
+    top.appendChild(left);
 
-    const meta = document.createElement('span');
-    meta.className = 'meta';
-    meta.textContent = label;
-    li.appendChild(meta);
+    const metaTop = document.createElement('span');
+    metaTop.className = 'meta';
+    metaTop.textContent = label;
+    top.appendChild(metaTop);
+
+    li.appendChild(top);
+
+    const stats = document.createElement('div');
+    stats.className = 'date-stats';
+    const vidPart = d.has_videos
+      ? `${d.video_file_count} video${d.video_file_count === 1 ? '' : 's'} · ${formatSize(d.video_total_size)}`
+      : 'no videos';
+    const imgPart = d.has_images
+      ? `${d.image_file_count} image${d.image_file_count === 1 ? '' : 's'} · ${formatSize(d.image_total_size)}`
+      : 'no images';
+    stats.textContent = `${vidPart}    ${imgPart}`;
+    li.appendChild(stats);
 
     lists.dates.appendChild(li);
   }
