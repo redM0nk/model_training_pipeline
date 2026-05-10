@@ -226,6 +226,18 @@ async function refreshTmux() {
   }
 }
 
+function videoErrorMessage(video) {
+  const e = video.error;
+  if (!e) return 'unknown error';
+  const codes = {
+    1: 'MEDIA_ERR_ABORTED (load aborted)',
+    2: 'MEDIA_ERR_NETWORK (network error)',
+    3: 'MEDIA_ERR_DECODE (decode failure — codec not supported)',
+    4: 'MEDIA_ERR_SRC_NOT_SUPPORTED (source/format not playable)',
+  };
+  return `${codes[e.code] || 'code ' + e.code}${e.message ? ' — ' + e.message : ''}`;
+}
+
 async function openVideoModal(date) {
   const modal = $('#video-modal');
   const list = $('#video-list');
@@ -237,7 +249,7 @@ async function openVideoModal(date) {
   list.innerHTML = '<li class="disabled">Loading…</li>';
   video.removeAttribute('src');
   video.load();
-  now.textContent = '';
+  now.innerHTML = '';
   modal.classList.remove('hidden');
 
   try {
@@ -261,9 +273,31 @@ async function openVideoModal(date) {
       li.onclick = () => {
         for (const el of list.querySelectorAll('li')) el.classList.remove('selected');
         li.classList.add('selected');
+        video.onerror = () => {
+          now.innerHTML = '';
+          const msg = document.createElement('div');
+          msg.className = 'video-error';
+          msg.textContent = `${f.name} — ${videoErrorMessage(video)}`;
+          now.appendChild(msg);
+          const a = document.createElement('a');
+          a.href = f.url; a.target = '_blank'; a.rel = 'noopener';
+          a.textContent = 'Open direct in new tab';
+          a.className = 'video-direct-link';
+          now.appendChild(a);
+        };
         video.src = f.url;
-        video.play().catch(() => { /* user can press play */ });
-        now.textContent = f.name;
+        video.load();
+        const playPromise = video.play();
+        if (playPromise && playPromise.catch) playPromise.catch(() => {});
+        now.innerHTML = '';
+        const name = document.createElement('div');
+        name.textContent = f.name;
+        now.appendChild(name);
+        const a = document.createElement('a');
+        a.href = f.url; a.target = '_blank'; a.rel = 'noopener';
+        a.textContent = 'Open direct in new tab';
+        a.className = 'video-direct-link';
+        now.appendChild(a);
       };
       list.appendChild(li);
     }

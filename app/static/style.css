@@ -162,6 +162,15 @@ button.cancel:hover { border-color: #dc6d6d; color: #dc6d6d; }
 }
 .video-now {
   margin-top: 6px; font-size: 12px; color: #8b95a7;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   width: 100%; text-align: center;
+  display: flex; flex-direction: column; gap: 4px; align-items: center;
 }
+.video-now > div {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+.video-error { color: #dc6d6d; }
+.video-direct-link {
+  color: #6db3dc; text-decoration: underline; font-size: 12px;
+}
+.video-direct-link:hover { color: #9ed0f0; }

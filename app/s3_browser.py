@@ -68,6 +68,14 @@ class S3Browser:
         return count
 
     VIDEO_EXTS = (".mp4", ".mov", ".m4v", ".webm", ".mkv", ".avi")
+    VIDEO_MIME = {
+        ".mp4": "video/mp4",
+        ".m4v": "video/mp4",
+        ".mov": "video/quicktime",
+        ".webm": "video/webm",
+        ".mkv": "video/x-matroska",
+        ".avi": "video/x-msvideo",
+    }
 
     def list_video_files(self, customer: str, location: str, conveyor: str,
                          date: str) -> List[dict]:
@@ -90,10 +98,20 @@ class S3Browser:
         out.sort(key=lambda x: x["name"])
         return out
 
-    def presign(self, key: str, expires: int = 3600) -> str:
+    def presign(self, key: str, expires: int = 3600,
+                content_type: str = None) -> str:
+        params = {"Bucket": self.bucket, "Key": key}
+        if content_type is None:
+            for ext, mime in self.VIDEO_MIME.items():
+                if key.lower().endswith(ext):
+                    content_type = mime
+                    break
+        if content_type:
+            params["ResponseContentType"] = content_type
+            params["ResponseContentDisposition"] = "inline"
         return self.client.generate_presigned_url(
             "get_object",
-            Params={"Bucket": self.bucket, "Key": key},
+            Params=params,
             ExpiresIn=expires,
         )
 
