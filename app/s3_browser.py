@@ -19,8 +19,7 @@ class DateEntry:
     has_images: bool
     video_file_count: int = 0
     video_total_size: int = 0
-    image_file_count: int = 0
-    image_total_size: int = 0
+    image_folder_count: int = 0
 
     @property
     def ready(self) -> bool:
@@ -60,6 +59,14 @@ class S3Browser:
                 size += int(obj.get("Size", 0))
         return count, size
 
+    def _count_subfolders(self, prefix: str) -> int:
+        """Number of immediate subfolders under `prefix`."""
+        count = 0
+        paginator = self.client.get_paginator("list_objects_v2")
+        for page in paginator.paginate(Bucket=self.bucket, Prefix=prefix, Delimiter="/"):
+            count += len(page.get("CommonPrefixes") or [])
+        return count
+
     def list_customers(self) -> List[str]:
         return self._list_prefixes(self.root_prefix)
 
@@ -78,9 +85,9 @@ class S3Browser:
         image_dates = set(self._list_prefixes(images_root))
         all_dates = sorted(video_dates | image_dates, reverse=True)
 
-        def stats_for(date: str) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+        def stats_for(date: str) -> Tuple[Tuple[int, int], int]:
             v = self._prefix_stats(f"{videos_root}{date}/") if date in video_dates else (0, 0)
-            i = self._prefix_stats(f"{images_root}{date}/") if date in image_dates else (0, 0)
+            i = self._count_subfolders(f"{images_root}{date}/") if date in image_dates else 0
             return v, i
 
         entries: List[DateEntry] = []
@@ -90,15 +97,14 @@ class S3Browser:
         with ThreadPoolExecutor(max_workers=min(16, len(all_dates) * 2)) as ex:
             results = list(ex.map(stats_for, all_dates))
 
-        for d, ((v_count, v_size), (i_count, i_size)) in zip(all_dates, results):
+        for d, ((v_count, v_size), i_folder_count) in zip(all_dates, results):
             entries.append(DateEntry(
                 date=d,
                 has_videos=d in video_dates,
                 has_images=d in image_dates,
                 video_file_count=v_count,
                 video_total_size=v_size,
-                image_file_count=i_count,
-                image_total_size=i_size,
+                image_folder_count=i_folder_count,
             ))
         return entries
 

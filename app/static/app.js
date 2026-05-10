@@ -83,13 +83,9 @@ async function selectConveyor(name) {
   renderDates();
 }
 
-function formatSize(bytes) {
-  if (!bytes) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let i = 0;
-  let v = bytes;
-  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
-  return `${v >= 10 || i === 0 ? v.toFixed(0) : v.toFixed(1)} ${units[i]}`;
+function formatGB(bytes) {
+  const gb = (bytes || 0) / (1024 ** 3);
+  return `${gb.toFixed(2)} GB`;
 }
 
 function renderDates() {
@@ -141,10 +137,10 @@ function renderDates() {
     const stats = document.createElement('div');
     stats.className = 'date-stats';
     const vidPart = d.has_videos
-      ? `${d.video_file_count} video${d.video_file_count === 1 ? '' : 's'} · ${formatSize(d.video_total_size)}`
+      ? `${d.video_file_count} video${d.video_file_count === 1 ? '' : 's'} · ${formatGB(d.video_total_size)}`
       : 'no videos';
     const imgPart = d.has_images
-      ? `${d.image_file_count} image${d.image_file_count === 1 ? '' : 's'} · ${formatSize(d.image_total_size)}`
+      ? `${d.image_folder_count} image folder${d.image_folder_count === 1 ? '' : 's'}`
       : 'no images';
     stats.textContent = `${vidPart}    ${imgPart}`;
     li.appendChild(stats);
