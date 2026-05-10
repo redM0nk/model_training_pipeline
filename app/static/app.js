@@ -297,16 +297,16 @@ async function openVideoModal(date) {
           now.appendChild(msg);
           const btn = document.createElement('button');
           btn.className = 'video-transcode-btn';
-          btn.textContent = 'Try transcoded stream (H.264, slow, no seek)';
+          btn.textContent = 'Try direct stream (original codec)';
           btn.onclick = () => {
             video.onerror = () => {
               now.innerHTML = '';
               const m = document.createElement('div');
               m.className = 'video-error';
-              m.textContent = `Transcode failed: ${videoErrorMessage(video)}`;
+              m.textContent = `Direct stream failed: ${videoErrorMessage(video)}`;
               now.appendChild(m);
             };
-            setSource(f.stream_url, true);
+            setSource(f.url, false);
           };
           now.appendChild(btn);
           const a = document.createElement('a');
@@ -315,7 +315,7 @@ async function openVideoModal(date) {
           a.className = 'video-direct-link';
           now.appendChild(a);
         };
-        setSource(f.url, false);
+        setSource(f.stream_url, true);
       };
       list.appendChild(li);
     }
