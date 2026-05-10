@@ -1,4 +1,5 @@
-"""Video readiness dashboard — Flask backend."""
+"""Dataset Curation Console — Flask backend."""
+import hmac
 import os
 import shutil
 import subprocess
@@ -21,6 +22,19 @@ def load_conf() -> dict:
 def create_app() -> Flask:
     conf = load_conf()
     app = Flask(__name__, template_folder="templates", static_folder="static")
+
+    password = os.environ.get("APP_PASSWORD", "Everestlabs_123!")
+
+    @app.before_request
+    def _require_password():
+        auth = request.authorization
+        if auth and hmac.compare_digest((auth.password or ""), password):
+            return None
+        return Response(
+            "Authentication required.\n",
+            401,
+            {"WWW-Authenticate": 'Basic realm="Dataset Curation Console"'},
+        )
 
     browser = S3Browser(
         bucket=conf["s3_bucket"],
