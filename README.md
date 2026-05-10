@@ -1,6 +1,6 @@
 # model_training_pipeline
 
-## Video Readiness Dashboard (`app/`)
+## Dataset Curation Console (`app/`)
 
 A small web app that browses the S3 production tree, shows which recording
 dates are ready for frame extraction (videos uploaded but no extracted images
