@@ -7,14 +7,12 @@ Strategy:
   - tmux send-keys "cd <wd> && <cmd> ; touch <done_marker> ; echo __JOB_DONE__"
   - Watch for the done marker file (cheap, robust) to mark the job finished.
 """
-from __future__ import annotations
-
 import os
 import shlex
 import subprocess
 import threading
 import time
-from typing import List
+from typing import Optional
 
 import yaml
 
@@ -81,8 +79,8 @@ class Dispatcher(threading.Thread):
     # ---- main loop ----
     def run(self) -> None:
         poll = self.conf.get("dispatch_poll_interval", 5)
-        active_marker: str | None = None
-        active_job_id: str | None = None
+        active_marker = None  # type: Optional[str]
+        active_job_id = None  # type: Optional[str]
 
         while not self._stop.is_set():
             try:
