@@ -270,6 +270,22 @@ async function openVideoModal(date) {
       const sizeMB = ((f.size || 0) / (1024 * 1024)).toFixed(1);
       li.innerHTML = `<span class="vname"></span><span class="vsize">${sizeMB} MB</span>`;
       li.querySelector('.vname').textContent = f.name;
+      const setSource = (src, transcoded) => {
+        video.src = src;
+        video.load();
+        const p = video.play();
+        if (p && p.catch) p.catch(() => {});
+        now.innerHTML = '';
+        const name = document.createElement('div');
+        name.textContent = transcoded ? `${f.name} (transcoded)` : f.name;
+        now.appendChild(name);
+        const a = document.createElement('a');
+        a.href = f.url; a.target = '_blank'; a.rel = 'noopener';
+        a.textContent = 'Open direct in new tab';
+        a.className = 'video-direct-link';
+        now.appendChild(a);
+      };
+
       li.onclick = () => {
         for (const el of list.querySelectorAll('li')) el.classList.remove('selected');
         li.classList.add('selected');
@@ -279,25 +295,27 @@ async function openVideoModal(date) {
           msg.className = 'video-error';
           msg.textContent = `${f.name} — ${videoErrorMessage(video)}`;
           now.appendChild(msg);
+          const btn = document.createElement('button');
+          btn.className = 'video-transcode-btn';
+          btn.textContent = 'Try transcoded stream (H.264, slow, no seek)';
+          btn.onclick = () => {
+            video.onerror = () => {
+              now.innerHTML = '';
+              const m = document.createElement('div');
+              m.className = 'video-error';
+              m.textContent = `Transcode failed: ${videoErrorMessage(video)}`;
+              now.appendChild(m);
+            };
+            setSource(f.stream_url, true);
+          };
+          now.appendChild(btn);
           const a = document.createElement('a');
           a.href = f.url; a.target = '_blank'; a.rel = 'noopener';
           a.textContent = 'Open direct in new tab';
           a.className = 'video-direct-link';
           now.appendChild(a);
         };
-        video.src = f.url;
-        video.load();
-        const playPromise = video.play();
-        if (playPromise && playPromise.catch) playPromise.catch(() => {});
-        now.innerHTML = '';
-        const name = document.createElement('div');
-        name.textContent = f.name;
-        now.appendChild(name);
-        const a = document.createElement('a');
-        a.href = f.url; a.target = '_blank'; a.rel = 'noopener';
-        a.textContent = 'Open direct in new tab';
-        a.className = 'video-direct-link';
-        now.appendChild(a);
+        setSource(f.url, false);
       };
       list.appendChild(li);
     }

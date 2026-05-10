@@ -98,6 +98,9 @@ class S3Browser:
         out.sort(key=lambda x: x["name"])
         return out
 
+    def is_managed_key(self, key: str) -> bool:
+        return bool(key) and key.startswith(self.root_prefix)
+
     def presign(self, key: str, expires: int = 3600,
                 content_type: str = None) -> str:
         params = {"Bucket": self.bucket, "Key": key}

@@ -174,3 +174,8 @@ button.cancel:hover { border-color: #dc6d6d; color: #dc6d6d; }
   color: #6db3dc; text-decoration: underline; font-size: 12px;
 }
 .video-direct-link:hover { color: #9ed0f0; }
+.video-transcode-btn {
+  background: #2a3450; border: 1px solid #3a4868; color: #c9d1de;
+  padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
+}
+.video-transcode-btn:hover { background: #354065; }

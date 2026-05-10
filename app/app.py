@@ -1,8 +1,10 @@
 """Video readiness dashboard — Flask backend."""
 import os
+import shutil
+import subprocess
 
 import yaml
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request
 
 from dispatcher import Dispatcher
 from queue_store import QueueStore
@@ -73,7 +75,55 @@ def create_app() -> Flask:
         )
         for f in files:
             f["url"] = browser.presign(f["key"])
+            f["stream_url"] = "/api/video_stream?key=" + f["key"]
         return jsonify(files)
+
+    @app.get("/api/video_stream")
+    def api_video_stream():
+        key = request.args.get("key", "")
+        if not browser.is_managed_key(key):
+            return ("forbidden", 403)
+        ffmpeg = shutil.which("ffmpeg")
+        if not ffmpeg:
+            return ("ffmpeg not installed on the server", 501)
+        url = browser.presign(key, expires=3600, content_type="application/octet-stream")
+        cmd = [
+            ffmpeg, "-hide_banner", "-loglevel", "error", "-nostdin",
+            "-i", url,
+            "-vf", "scale='min(1280,iw)':-2",
+            "-c:v", "libx264", "-preset", "ultrafast", "-tune", "zerolatency",
+            "-crf", "28", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "128k", "-ac", "2",
+            "-movflags", "+frag_keyframe+empty_moov+default_base_moof",
+            "-f", "mp4", "pipe:1",
+        ]
+        proc = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            bufsize=0,
+        )
+
+        def generate():
+            try:
+                while True:
+                    chunk = proc.stdout.read(64 * 1024)
+                    if not chunk:
+                        break
+                    yield chunk
+            finally:
+                try:
+                    proc.stdout.close()
+                except Exception:
+                    pass
+                if proc.poll() is None:
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=2)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+
+        return Response(generate(), mimetype="video/mp4",
+                        headers={"Cache-Control": "no-store",
+                                 "Accept-Ranges": "none"})
 
     @app.get("/api/queue")
     def api_queue():
