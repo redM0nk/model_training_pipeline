@@ -17,6 +17,10 @@ main { padding: 16px 20px; }
 }
 .pill.idle { background: #1f3a2a; color: #6ddc8a; }
 .pill.busy { background: #3a2a1f; color: #dcaa6d; }
+.pill.warn { background: #3a2a1f; color: #dcaa6d; }
+.pill.crit { background: #3a1f23; color: #dc6d6d; }
+
+.status-pills { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
 #browser {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
