@@ -136,13 +136,26 @@ function renderDates() {
 
     const stats = document.createElement('div');
     stats.className = 'date-stats';
-    const vidPart = d.has_videos
-      ? `${d.video_file_count} video${d.video_file_count === 1 ? '' : 's'} · ${formatGB(d.video_total_size)}`
-      : 'no videos';
-    const imgPart = d.has_images
+
+    const vidSpan = document.createElement('span');
+    if (d.has_videos) {
+      vidSpan.className = 'stat-link';
+      vidSpan.textContent = `${d.video_file_count} video${d.video_file_count === 1 ? '' : 's'} · ${formatGB(d.video_total_size)}`;
+      vidSpan.title = 'Click to preview videos';
+      vidSpan.onclick = (e) => { e.stopPropagation(); openVideoModal(d.date); };
+    } else {
+      vidSpan.textContent = 'no videos';
+    }
+    stats.appendChild(vidSpan);
+
+    stats.appendChild(document.createTextNode('    '));
+
+    const imgSpan = document.createElement('span');
+    imgSpan.textContent = d.has_images
       ? `${d.image_folder_count} image folder${d.image_folder_count === 1 ? '' : 's'}`
       : 'no images';
-    stats.textContent = `${vidPart}    ${imgPart}`;
+    stats.appendChild(imgSpan);
+
     li.appendChild(stats);
 
     lists.dates.appendChild(li);
@@ -212,6 +225,68 @@ async function refreshTmux() {
     $('#tmux-status').textContent = 'tmux: error';
   }
 }
+
+async function openVideoModal(date) {
+  const modal = $('#video-modal');
+  const list = $('#video-list');
+  const video = $('#video-el');
+  const now = $('#video-now');
+  const title = $('#video-modal-title');
+
+  title.textContent = `Videos · ${state.customer} / ${state.location} / ${state.conveyor} / ${date}`;
+  list.innerHTML = '<li class="disabled">Loading…</li>';
+  video.removeAttribute('src');
+  video.load();
+  now.textContent = '';
+  modal.classList.remove('hidden');
+
+  try {
+    const params = new URLSearchParams({
+      customer: state.customer,
+      location: state.location,
+      conveyor: state.conveyor,
+      date,
+    });
+    const files = await fetchJSON(`/api/videos?${params.toString()}`);
+    list.innerHTML = '';
+    if (!files.length) {
+      list.innerHTML = '<li class="disabled">— no playable videos —</li>';
+      return;
+    }
+    for (const f of files) {
+      const li = document.createElement('li');
+      const sizeMB = ((f.size || 0) / (1024 * 1024)).toFixed(1);
+      li.innerHTML = `<span class="vname"></span><span class="vsize">${sizeMB} MB</span>`;
+      li.querySelector('.vname').textContent = f.name;
+      li.onclick = () => {
+        for (const el of list.querySelectorAll('li')) el.classList.remove('selected');
+        li.classList.add('selected');
+        video.src = f.url;
+        video.play().catch(() => { /* user can press play */ });
+        now.textContent = f.name;
+      };
+      list.appendChild(li);
+    }
+    list.firstElementChild.click();
+  } catch (e) {
+    list.innerHTML = `<li class="disabled">Error: ${e.message}</li>`;
+  }
+}
+
+function closeVideoModal() {
+  const modal = $('#video-modal');
+  const video = $('#video-el');
+  modal.classList.add('hidden');
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+}
+
+$('#video-modal-close').onclick = closeVideoModal;
+$('#video-modal').onclick = (e) => { if (e.target.id === 'video-modal') closeVideoModal(); };
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !$('#video-modal').classList.contains('hidden')) closeVideoModal();
+});
 
 loadCustomers();
 refreshQueue();

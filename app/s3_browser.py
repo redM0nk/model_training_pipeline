@@ -67,6 +67,36 @@ class S3Browser:
             count += len(page.get("CommonPrefixes") or [])
         return count
 
+    VIDEO_EXTS = (".mp4", ".mov", ".m4v", ".webm", ".mkv", ".avi")
+
+    def list_video_files(self, customer: str, location: str, conveyor: str,
+                         date: str) -> List[dict]:
+        base = (f"{self.root_prefix}{customer}/{location}/{conveyor}/"
+                f"{self.videos_subpath}{date}/")
+        out: List[dict] = []
+        paginator = self.client.get_paginator("list_objects_v2")
+        for page in paginator.paginate(Bucket=self.bucket, Prefix=base):
+            for obj in page.get("Contents") or []:
+                key = obj["Key"]
+                if key.endswith("/"):
+                    continue
+                if not key.lower().endswith(self.VIDEO_EXTS):
+                    continue
+                out.append({
+                    "key": key,
+                    "name": key[len(base):],
+                    "size": int(obj.get("Size", 0)),
+                })
+        out.sort(key=lambda x: x["name"])
+        return out
+
+    def presign(self, key: str, expires: int = 3600) -> str:
+        return self.client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self.bucket, "Key": key},
+            ExpiresIn=expires,
+        )
+
     def list_customers(self) -> List[str]:
         return self._list_prefixes(self.root_prefix)
 

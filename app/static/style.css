@@ -101,3 +101,67 @@ button.cancel {
   border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 12px;
 }
 button.cancel:hover { border-color: #dc6d6d; color: #dc6d6d; }
+
+.stat-link {
+  cursor: pointer;
+  color: #6db3dc;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+.stat-link:hover { color: #9ed0f0; }
+
+.modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+.modal.hidden { display: none; }
+.modal-card {
+  width: min(1100px, 95vw); height: min(720px, 90vh);
+  background: #161922; border: 1px solid #232838; border-radius: 10px;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: #1b1f2b; border-bottom: 1px solid #232838;
+}
+.modal-header h2 {
+  font-size: 13px; margin: 0; color: #c9d1de; text-transform: none; letter-spacing: 0;
+}
+.modal-close {
+  background: transparent; border: 0; color: #8b95a7; font-size: 22px;
+  line-height: 1; cursor: pointer; padding: 0 4px;
+}
+.modal-close:hover { color: #fff; }
+.modal-body {
+  flex: 1; display: grid; grid-template-columns: 280px 1fr; gap: 0;
+  min-height: 0;
+}
+.video-list {
+  list-style: none; padding: 6px; margin: 0; overflow-y: auto;
+  border-right: 1px solid #232838; background: #12141c;
+}
+.video-list li {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 4px; cursor: pointer;
+  font-size: 12px; color: #c9d1de;
+}
+.video-list li:hover { background: #1f2433; }
+.video-list li.selected { background: #2a3450; color: #fff; }
+.video-list li.disabled { opacity: 0.6; cursor: default; }
+.video-list .vname {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+}
+.video-list .vsize { color: #8b95a7; font-size: 11px; flex: 0 0 auto; }
+.video-player {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 12px; background: #0b0d12; min-width: 0;
+}
+.video-player video {
+  width: 100%; max-height: calc(100% - 24px); background: #000;
+  border-radius: 6px;
+}
+.video-now {
+  margin-top: 6px; font-size: 12px; color: #8b95a7;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  width: 100%; text-align: center;
+}

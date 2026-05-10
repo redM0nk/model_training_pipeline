@@ -63,6 +63,18 @@ def create_app() -> Flask:
             for e in entries
         ])
 
+    @app.get("/api/videos")
+    def api_videos():
+        files = browser.list_video_files(
+            request.args["customer"],
+            request.args["location"],
+            request.args["conveyor"],
+            request.args["date"],
+        )
+        for f in files:
+            f["url"] = browser.presign(f["key"])
+        return jsonify(files)
+
     @app.get("/api/queue")
     def api_queue():
         return jsonify(store.list_jobs())
